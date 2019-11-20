@@ -113,26 +113,26 @@ router.get('/resumeActive', async (req, res) => {
 
         let actives = [{
             stock: 'AAPL',
-            balance: valuesSplit[0],
+            balance: valuesSplit[0].toFixed(2),
             shares: Math.ceil(valuesSplit[0]/262)
         },{
             stock: 'ADBE',
-            balance: valuesSplit[1],
+            balance: valuesSplit[1].toFixed(2),
             shares: Math.ceil(valuesSplit[0]/298)
         },
         {
             stock: 'MSFT',
-            balance: valuesSplit[2],
+            balance: valuesSplit[2].toFixed(2),
             shares: Math.ceil(valuesSplit[0]/149)
         },
         {
             stock: 'TSLA',
-            balance: valuesSplit[3],
+            balance: valuesSplit[3].toFixed(2),
             shares: Math.ceil(valuesSplit[0]/352)
         },
         {
             stock: 'ATVI',
-            balance: valuesSplit[4],
+            balance: valuesSplit[4].toFixed(2),
             shares: Math.ceil(valuesSplit[0]/53)
         }]
 
