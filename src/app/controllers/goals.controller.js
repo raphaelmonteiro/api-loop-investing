@@ -1,5 +1,5 @@
 const express = require('express');
-const { Goals, Validate, DepositFrequency } = require('../models/goals');
+const { Goals, Validate, ValidatePreview, DepositFrequency } = require('../models/goals');
 const authMiddleware = require('../middlewares/auth');
 
 const router = express.Router();
@@ -18,6 +18,20 @@ router.post('/', async (req, res) => {
         return res.send(goal)
     } catch (error) {
         res.status(400).send({message: "Failed create goal", error});
+    }
+})
+
+router.post('/preview', async (req, res) => {
+    try {
+        console.log('aqui')
+        const { error } = ValidatePreview(req.body);
+        if(error) return res.status(400).send({message: `The field ${error.details[0].path} is required.`, error}); 
+        console.log('aqui2')
+        const { depositAmount, depositFrequency } = req.body
+        console.log('aqui3')
+        return res.send({projectedBalance: calculateFutureValue(depositAmount, depositFrequency)})
+    } catch (error) {
+        res.status(400).send({message: "Failed in calculate preview goal", error});
     }
 })
 
@@ -90,6 +104,44 @@ router.delete('/:goal', async (req, res) => {
     }
 })
 
+router.get('/resumeActive', async (req, res) => {
+    try {
+        const goals = await Goals.find({user: req.userId, active: true}).populate("user");
+        if(!goals.length) return res.status(400).send({message: "Goal not found"});
+        const goal = goals[0]
+        const valuesSplit = getRandomNumber(300, goal.goalAmount, 5, goal.goalAmount);
+
+        let actives = [{
+            stock: 'AAPL',
+            balance: valuesSplit[0],
+            shares: Math.ceil(valuesSplit[0]/262)
+        },{
+            stock: 'ADBE',
+            balance: valuesSplit[1],
+            shares: Math.ceil(valuesSplit[0]/298)
+        },
+        {
+            stock: 'MSFT',
+            balance: valuesSplit[2],
+            shares: Math.ceil(valuesSplit[0]/149)
+        },
+        {
+            stock: 'TSLA',
+            balance: valuesSplit[3],
+            shares: Math.ceil(valuesSplit[0]/352)
+        },
+        {
+            stock: 'ATVI',
+            balance: valuesSplit[4],
+            shares: Math.ceil(valuesSplit[0]/53)
+        }]
+
+        return res.send({profitToday: 27.1, profit: 7.29, actives})
+    } catch (error) {
+        res.status(400).send({message: "Failed load goal", error});
+    }
+})
+
 router.get('/', async (req, res) => {
     try {
         const goals = await Goals.find({user: req.userId, active: true}).populate("user");
@@ -125,5 +177,23 @@ function calculateFutureValue(depositAmount, depositFrequency) {
     
     const frequency = 12*depositFrequency
 
-    return (depositAmount * (interest + 1) ^ frequency) + depositAmount * ((((1 + interest) ^ frequency) - 1)/1) * (1 + interest)
+    const result = (depositAmount * (interest + 1) ^ frequency) + depositAmount * ((((1 + interest) ^ frequency) - 1)/1) * (1 + interest)
+
+    return result.toFixed(2)
+}
+
+function getRandomNumber(min, max, length, sum) {
+    return Array.from(
+        { length },
+        (_, i) => {
+            var smin = (length - i - 1) * min,
+                smax = (length - i - 1) * max,
+                offset = Math.max(sum - smax, min),
+                random = 1 + Math.min(sum - offset, max - offset, sum - smin - min),
+                value = Math.floor(Math.random() * random + offset);
+
+            sum -= value;
+            return value;
+        }
+    );
 }

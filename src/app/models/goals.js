@@ -73,6 +73,17 @@ const Validate = goal => {
     return Joi.validate(goal, schema);
 }
 
+const ValidatePreview = goal => {
+    const schema = {
+        goalAmount: Joi.number().required(),
+        depositFrequency: Joi.number().min(1).max(3).required(),
+        depositAmount: Joi.number().required(),
+        risk: Joi.number().min(1).max(5),
+    }
+    
+    return Joi.validate(goal, schema);
+}
+
 GoalsSchema.pre('save', async function (next) {
     if(!this.risk) {
         this.risk = riskTypes[2].value
@@ -89,4 +100,5 @@ const Goals = mongoose.model('Goal', GoalsSchema);
 
 exports.Goals = Goals;
 exports.Validate = Validate;
+exports.ValidatePreview = ValidatePreview;
 exports.DepositFrequency = DepositFrequency;
