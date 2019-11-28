@@ -23,12 +23,9 @@ router.post('/', async (req, res) => {
 
 router.post('/preview', async (req, res) => {
     try {
-        console.log('aqui')
         const { error } = ValidatePreview(req.body);
         if(error) return res.status(400).send({message: `The field ${error.details[0].path} is required.`, error}); 
-        console.log('aqui2')
         const { depositAmount, depositFrequency } = req.body
-        console.log('aqui3')
         return res.send({projectedBalance: calculateFutureValue(depositAmount, depositFrequency)})
     } catch (error) {
         res.status(400).send({message: "Failed in calculate preview goal", error});
@@ -114,26 +111,31 @@ router.get('/resumeActive', async (req, res) => {
         let actives = [{
             stock: 'AAPL',
             balance: valuesSplit[0].toFixed(2),
-            shares: Math.ceil(valuesSplit[0]/262)
+            shares: Math.ceil(valuesSplit[0]/262),
+            color: "#f542dd"
         },{
             stock: 'ADBE',
             balance: valuesSplit[1].toFixed(2),
-            shares: Math.ceil(valuesSplit[0]/298)
+            shares: Math.ceil(valuesSplit[0]/298),
+            color: "#f5b942"
         },
         {
             stock: 'MSFT',
             balance: valuesSplit[2].toFixed(2),
-            shares: Math.ceil(valuesSplit[0]/149)
+            shares: Math.ceil(valuesSplit[0]/149),
+            color: "#e0f542"
         },
         {
             stock: 'TSLA',
             balance: valuesSplit[3].toFixed(2),
-            shares: Math.ceil(valuesSplit[0]/352)
+            shares: Math.ceil(valuesSplit[0]/352),
+            color: "#dedede"
         },
         {
             stock: 'ATVI',
             balance: valuesSplit[4].toFixed(2),
-            shares: Math.ceil(valuesSplit[0]/53)
+            shares: Math.ceil(valuesSplit[0]/53),
+            color: "#aee3e6"
         }]
 
         return res.send({profitToday: 27.1, profit: 7.29, actives})
@@ -150,10 +152,14 @@ router.get('/', async (req, res) => {
         let list = []
 
         for (const goal of goals) {
+            let balance = goal.balance || getRandomNumber(0, (goal.goalAmount*0.8), 2, goal.goalAmount)[0]
+
             list.push(Object.assign({}, 
                 goal._doc, 
+                {balance},
                 {valueFuture: calculateFutureValue(goal.depositAmount, goal.depositFrequency)}, 
-                {toGoal: ((goal.balance/goal.goalAmount) * 100).toFixed(1)})
+                {toGoalPercent: ((balance/goal.goalAmount) * 100).toFixed(2)},
+                {toGoal: (parseFloat(goal.goalAmount) - parseFloat(balance)).toFixed(2)})
             )
         }
 

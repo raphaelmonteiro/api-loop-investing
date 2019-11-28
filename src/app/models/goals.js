@@ -85,6 +85,10 @@ const ValidatePreview = goal => {
 }
 
 GoalsSchema.pre('save', async function (next) {
+    if(!this.balance) {
+        this.balance = 0.00
+    }
+
     if(!this.risk) {
         this.risk = riskTypes[2].value
     } else {
