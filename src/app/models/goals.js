@@ -54,11 +54,11 @@ const GoalsSchema = new mongoose.Schema({
     }
 });
 
-const DepositFrequency = {
-    "Daily": { value: 1 },
-    "Weekly": { value: 2 },
-    "Monthly": { value: 3 }
-}
+const DepositFrequency = [
+    {value: 1, type: "Weekly"},
+    {value: 2, type: "Bi-Weekly"},
+    {value: 3, type: "Monthly"}
+]
 
 const Validate = goal => {
     const schema = {
@@ -100,9 +100,16 @@ GoalsSchema.pre('save', async function (next) {
     next();
 })
 
+const getTypeFrequecy = (frequency) => {
+    return DepositFrequency.filter(type => {
+        return type.value === frequency
+    })
+}
+
 const Goals = mongoose.model('Goal', GoalsSchema);
 
 exports.Goals = Goals;
 exports.Validate = Validate;
 exports.ValidatePreview = ValidatePreview;
 exports.DepositFrequency = DepositFrequency;
+exports.GetTypeFrequecy = getTypeFrequecy

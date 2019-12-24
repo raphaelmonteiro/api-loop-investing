@@ -1,8 +1,22 @@
 const express = require('express');
-const { Goals, Validate, ValidatePreview, DepositFrequency } = require('../models/goals');
 const authMiddleware = require('../middlewares/auth');
-
 const router = express.Router();
+const { 
+    Goals, 
+    Validate, 
+    ValidatePreview, 
+    DepositFrequency, 
+    GetTypeFrequecy } = require('../models/goals');
+const { 
+    MarginError, 
+    SDWTDAVGPercent, 
+    WeeklyReturn, 
+    BiWeeklyReturn, 
+    MeanWTDAVGPercent,
+    CalculatePeriod,
+    InvestedPrincipal,
+    InterestEarned,
+    TimeTargetYears } = require('../services/futureValueAnnuity')
 
 router.use(authMiddleware);
 
@@ -25,8 +39,7 @@ router.post('/preview', async (req, res) => {
     try {
         const { error } = ValidatePreview(req.body);
         if(error) return res.status(400).send({message: `The field ${error.details[0].path} is required.`, error}); 
-        const { depositAmount, depositFrequency } = req.body
-        return res.send({projectedBalance: calculateFutureValue(depositAmount, depositFrequency)})
+        return res.send({projectedBalance: futureValues(req.body)})
     } catch (error) {
         res.status(400).send({message: "Failed in calculate preview goal", error});
     }
@@ -90,6 +103,17 @@ router.put('/:goal/active', async (req, res) => {
     }
 })
 
+router.get('/:goalId/target', async (req, res) => {
+    try {
+        const goal = await Goals.findById(req.params.goalId);
+        
+        return res.send(futureValues(goal))
+    } catch (error) {
+        console.log(error)
+        res.status(400).send({message: "Failed get target goal", error});
+    }
+})
+
 router.delete('/:goal', async (req, res) => {
     try {
         const goal = await Goals.findByIdAndUpdate(req.params.goal, {active: false}, {new: true});
@@ -148,18 +172,16 @@ router.get('/', async (req, res) => {
     try {
         const goals = await Goals.find({user: req.userId, active: true}).populate("user");
         if(!goals.length) return res.status(400).send({message: "Goal not found"});
-        
         let list = []
 
         for (const goal of goals) {
             let balance = goal.balance || getRandomNumber(0, (goal.goalAmount*0.8), 2, goal.goalAmount)[0]
-
             list.push(Object.assign({}, 
                 goal._doc, 
                 {balance},
-                {valueFuture: calculateFutureValue(goal.depositAmount, goal.depositFrequency)}, 
                 {toGoalPercent: ((balance/goal.goalAmount) * 100).toFixed(2)},
-                {toGoal: (parseFloat(goal.goalAmount) - parseFloat(balance)).toFixed(2)})
+                {toGoal: (parseFloat(goal.goalAmount) - parseFloat(balance)).toFixed(2)},
+                {futureValues: futureValues(goal)})
             )
         }
 
@@ -171,21 +193,26 @@ router.get('/', async (req, res) => {
 
 module.exports = app => app.use('/goal', router)
 
-function calculateFutureValue(depositAmount, depositFrequency) {
+function futureValues(goal) {
+    const period = CalculatePeriod(goal)
 
-    let interest = 1
-    if(depositFrequency === DepositFrequency.Daily.value)
-        interest = 0.004/365
-    if(depositFrequency === DepositFrequency.Weekly.value)
-        interest = 0.004/52.14
-    if(depositFrequency === DepositFrequency.Monthly.value)
-        interest = 0.004/12
-    
-    const frequency = 12*depositFrequency
+    const target = {
+        input:  goal.depositAmount,
+        frequency: GetTypeFrequecy(goal.depositFrequency)[0].type,
+        target:  goal.goalAmount,
+        timeTarget: period.monthls,
+        timeTargetYears: parseFloat(TimeTargetYears(goal.depositFrequency, period)),
+        MarginError: parseFloat(MarginError(goal.depositFrequency)),
+        MeanWTDAVGReturn: MeanWTDAVGPercent(goal.depositFrequency),
+        SDWTDAVGReturn: SDWTDAVGPercent(goal.depositFrequency),
+        weeklyReturn: parseFloat(WeeklyReturn(goal.depositFrequency)),
+        biWeeklyReturn: parseFloat(BiWeeklyReturn(goal.depositFrequency)),
+        InvestedPrincipal: parseFloat(InvestedPrincipal(goal, period)),
+        InterestEarned: parseFloat(InterestEarned(goal, period)),
+        futureValue: parseFloat(period.futureValue.toFixed(2))
+    }
 
-    const result = (depositAmount * (interest + 1) ^ frequency) + depositAmount * ((((1 + interest) ^ frequency) - 1)/1) * (1 + interest)
-
-    return result.toFixed(2)
+    return target;
 }
 
 function getRandomNumber(min, max, length, sum) {
