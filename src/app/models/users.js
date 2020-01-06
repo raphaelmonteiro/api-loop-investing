@@ -38,6 +38,18 @@ const UserSchema = new mongoose.Schema({
     createdAt: {
         type: Date,
         default: Date.now
+    },
+    qn_inv_experience: {
+        type: Number,
+        require: true
+    },
+    qn_inv_risk: {
+        type: Number,
+        require: true
+    },
+    qn_inv_have_other_investments: {
+        type: Number,
+        require: true
     }
 });
 
@@ -63,7 +75,10 @@ const Validate = user => {
         name: Joi.string().required(),
         email: Joi.string().required(),
         phone: Joi.string().required(),
-        password: Joi.string().required()
+        password: Joi.string().required(),
+        qn_inv_experience: Joi.number().required(),
+        qn_inv_risk: Joi.number().required(),
+        qn_inv_have_other_investments: Joi.number().required()
     }
     
     return Joi.validate(user, schema);
