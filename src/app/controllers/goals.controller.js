@@ -109,30 +109,30 @@ router.get('/resumeActive', async (req, res) => {
         const valuesSplit = getRandomNumber(300, goal.goalAmount, 5, goal.goalAmount);
 
         let actives = [{
-            stock: 'AAPL',
+            stock: 'SPY',
             balance: valuesSplit[0].toFixed(2),
             shares: Math.ceil(valuesSplit[0]/262),
             color: "#f542dd"
         },{
-            stock: 'ADBE',
+            stock: 'QQQ',
             balance: valuesSplit[1].toFixed(2),
             shares: Math.ceil(valuesSplit[0]/298),
             color: "#f5b942"
         },
         {
-            stock: 'MSFT',
+            stock: 'VO',
             balance: valuesSplit[2].toFixed(2),
             shares: Math.ceil(valuesSplit[0]/149),
             color: "#e0f542"
         },
         {
-            stock: 'TSLA',
+            stock: 'LQD',
             balance: valuesSplit[3].toFixed(2),
             shares: Math.ceil(valuesSplit[0]/352),
             color: "#dedede"
         },
         {
-            stock: 'ATVI',
+            stock: 'GOVT',
             balance: valuesSplit[4].toFixed(2),
             shares: Math.ceil(valuesSplit[0]/53),
             color: "#aee3e6"
